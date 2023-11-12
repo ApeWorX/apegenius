@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.747a0bb5.css",
-    "main.js": "/static/js/main.f74a776b.js",
-    "index.html": "/index.html",
-    "main.747a0bb5.css.map": "/static/css/main.747a0bb5.css.map",
-    "main.f74a776b.js.map": "/static/js/main.f74a776b.js.map"
+    "main.css": "/ape-genius/static/css/main.747a0bb5.css",
+    "main.js": "/ape-genius/static/js/main.f74a776b.js",
+    "index.html": "/ape-genius/index.html",
+    "main.747a0bb5.css.map": "/ape-genius/static/css/main.747a0bb5.css.map",
+    "main.f74a776b.js.map": "/ape-genius/static/js/main.f74a776b.js.map"
   },
   "entrypoints": [
     "static/css/main.747a0bb5.css",
