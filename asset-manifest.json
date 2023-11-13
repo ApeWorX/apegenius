@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/ape-genius/static/css/main.747a0bb5.css",
-    "main.js": "/ape-genius/static/js/main.f74a776b.js",
+    "main.css": "/ape-genius/static/css/main.a5b5421e.css",
+    "main.js": "/ape-genius/static/js/main.c34617c7.js",
     "index.html": "/ape-genius/index.html",
-    "main.747a0bb5.css.map": "/ape-genius/static/css/main.747a0bb5.css.map",
-    "main.f74a776b.js.map": "/ape-genius/static/js/main.f74a776b.js.map"
+    "main.a5b5421e.css.map": "/ape-genius/static/css/main.a5b5421e.css.map",
+    "main.c34617c7.js.map": "/ape-genius/static/js/main.c34617c7.js.map"
   },
   "entrypoints": [
-    "static/css/main.747a0bb5.css",
-    "static/js/main.f74a776b.js"
+    "static/css/main.a5b5421e.css",
+    "static/js/main.c34617c7.js"
   ]
 }
