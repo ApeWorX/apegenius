@@ -113,7 +113,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                         /- Do not invent anything about ape that is not in source files unless you said you were going creative.
                         /- False certanty about what ape can do is the worse thing you can do, avoid it at all costs.
                         /- ALWAYS Answer the user question using the source files and tell the source of your answer.
-                        /- ALWAYS provide a confidence score from 0 to 10 of how much are you certain that your answer is correct based on KNOWLEDGE BASE.
+                        /- ALWAYS provide a % score of how much of your answer matches the KNOWLEDGE BASE.
                         /- If the task is of creative nature it's ok to go wild and beyond just the sources, but you MUST state that confidence score is -1 in that case.
                         '''
                     },
