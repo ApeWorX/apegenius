@@ -104,7 +104,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 temperature=0,
                 messages=[
                     {
-                        "role": "system",
+                        "role": "user",
                         "content": '''
                         /- You are a bot helping people understand Ape.
                         /- I have prefixed a KNOWLEDGE BASE that help you understand what is Ape.
