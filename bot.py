@@ -94,7 +94,7 @@ def preaudit(update: Update, context: CallbackContext) -> None:
         code_content = response.text
 
         prompt = '''
-/- Match the natspec documentation made for each function in the code above with its code, for each function tell me if it perfectly matches one another, if not list the differences. Make it a list with function signatures and assessments.
+/- Match the natspec documentation made for each function in the code above with its code, for each function list the differences if they don't match perfectly. Make it a list with function signatures and assessments for parts that do not match.
 '''
         messages = [
             {
