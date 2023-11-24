@@ -109,10 +109,11 @@ def preaudit(update: Update, context: CallbackContext) -> None:
         code_content = response.text
 
         prompt = '''
-/- Match the natspec documentation made for each function in the code above with its code, for each function list the differences if they don't match perfectly.
-/- Make it a list with function signatures and assessments for parts that do not match.
+/- Read and match the natspec documentation made for each function in the code above with its code, for each important function list the differences if they don't match perfectly.
+/- Make a list with function signatures and assessments for parts that do not match according to your interpretation.
 /- You can NEVER say that code is too long to make a review, you have more context size than the source code to craft your answer so you are allowed to make big analysis.
 /- For large codebases it's ok to analyze only the most important functions (normally the external ones).
+/- You don't need to execute any part of the code, just read it.
 '''
         messages = [
             {
