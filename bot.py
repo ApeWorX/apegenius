@@ -118,7 +118,7 @@ def preaudit(update: Update, context: CallbackContext) -> None:
         max_length = 4096
         messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
         for msg in messages:
-            update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            update.message.reply_text(msg)
 
     except requests.RequestException as e:
         update.message.reply_text(f"Error fetching data from the URL: {e}")
