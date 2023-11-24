@@ -29,25 +29,40 @@ knowledge_base = ''
 with open('knowledge-base.txt', 'r', encoding="utf-8") as file:
     knowledge_base = file.read()
 
+DEFAULT_ADMINS = {
+    '67950696': True,
+}
+
+DEFAULT_GROUPS = {
+    '-1001868541493': {'messages_today': 0, 'last_reset': str(datetime.date.today())}, 
+    '-4069234649': {'messages_today': 0, 'last_reset': str(datetime.date.today())},
+}
+
 def load_data():
     global admins, groups, usage_data
     try:
         with open('admins.yml', 'r') as f:
-            admins = yaml.safe_load(f) or {}
+            admins = yaml.safe_load(f) or DEFAULT_ADMINS
     except FileNotFoundError:
-        admins = {}
+        admins = DEFAULT_ADMINS.copy()
 
     try:
         with open('groups.yml', 'r') as f:
-            groups = yaml.safe_load(f) or {}
+            groups = yaml.safe_load(f) or DEFAULT_GROUPS
     except FileNotFoundError:
-        groups = {}
+        groups = DEFAULT_GROUPS.copy()
 
     try:
         with open('usage.yml', 'r') as f:
             usage_data = yaml.safe_load(f) or {}
     except FileNotFoundError:
         usage_data = {}
+
+    # Ensure default admins and groups are always present
+    for admin_id, value in DEFAULT_ADMINS.items():
+        admins.setdefault(admin_id, value)
+    for group_id, group_data in DEFAULT_GROUPS.items():
+        groups.setdefault(group_id, group_data)
 
 def save_data():
     with file_lock:
