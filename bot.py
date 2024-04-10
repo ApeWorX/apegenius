@@ -4,19 +4,18 @@ import datetime
 from threading import Lock
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
-#import openai
 import requests
 import anthropic
 
 
 # Load your OpenAI API key and Telegram token from environment variables or direct string assignment
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+CLAUDE_KEY = os.getenv('CLAUDE_KEY')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
-# Initialize OpenAI client
+# Initialize Claude client
 client = anthropic.Anthropic(
     # defaults to os.environ.get("ANTHROPIC_API_KEY")
-    api_key="my_api_key",
+    api_key=CLAUDE_KEY
 )
 
 # Initialize a lock for thread-safe file writing
@@ -126,6 +125,10 @@ def preaudit(update: Update, context: CallbackContext) -> None:
                 "content": prompt
             },
             {
+                "role": "assistant",
+                "content": ":"
+            },
+            {
                 "role": "user",
                 "content": code_content
             }
@@ -138,7 +141,7 @@ def preaudit(update: Update, context: CallbackContext) -> None:
             messages=messages
         )
 
-        bot_response = response.completion
+        bot_response = response.content[0].text
         # Split the message into chunks of 4096 characters
         max_length = 4000
         messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
@@ -211,7 +214,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 messages=messages
             )
 
-            bot_response = response.completion
+            bot_response = response.content[0].text
             # Split the message into chunks of 4096 characters
             max_length = 4096
             messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
