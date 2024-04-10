@@ -4,15 +4,20 @@ import datetime
 from threading import Lock
 from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
-import openai
+#import openai
 import requests
+import anthropic
+
 
 # Load your OpenAI API key and Telegram token from environment variables or direct string assignment
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
 # Initialize OpenAI client
-openai.api_key = OPENAI_API_KEY
+client = anthropic.Anthropic(
+    # defaults to os.environ.get("ANTHROPIC_API_KEY")
+    api_key="my_api_key",
+)
 
 # Initialize a lock for thread-safe file writing
 file_lock = Lock()
@@ -126,15 +131,16 @@ def preaudit(update: Update, context: CallbackContext) -> None:
             }
         ]
 
-        openai_response = openai.chat.completions.create(
-            model="gpt-4-turbo",
+        response = client.messages.create(
+            model="claude-3-opus-20240229",
+            max_tokens=4000,
             temperature=0,
-            messages=messages,
+            messages=messages
         )
 
-        bot_response = openai_response.choices[0].message.content
+        bot_response = response.completion
         # Split the message into chunks of 4096 characters
-        max_length = 4096
+        max_length = 4000
         messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
         for msg in messages:
             update.message.reply_text(msg)
@@ -198,13 +204,14 @@ def handle_message(update: Update, context: CallbackContext) -> None:
         })
 
         try:
-            response = openai.chat.completions.create(
-                model="gpt-4-1106-preview",
+            response = client.messages.create(
+                model="claude-3-opus-20240229",
+                max_tokens=4000,
                 temperature=0,
-                messages=messages,
+                messages=messages
             )
 
-            bot_response = response.choices[0].message.content
+            bot_response = response.completion
             # Split the message into chunks of 4096 characters
             max_length = 4096
             messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
@@ -215,12 +222,8 @@ def handle_message(update: Update, context: CallbackContext) -> None:
             if not admins.get(str(update.message.from_user.id)):
                 groups[group_id]['messages_today'] += 1
             save_data()
-        except openai.error.OpenAIError as e:
-            # Log the error for debugging purposes
-            context.logger.error(f"OpenAIError: {e}")
-
-            # Inform the user that the service is currently unavailable
-            update.message.reply_text(f"OpenAIError: {e}")
+        except Exception as e:
+            context.logger.error(f"Claude Error: {e}")
 
 
 
