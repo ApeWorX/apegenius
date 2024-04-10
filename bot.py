@@ -127,7 +127,7 @@ def preaudit(update: Update, context: CallbackContext) -> None:
         ]
 
         openai_response = openai.chat.completions.create(
-            model="gpt-4-turbo-preview",
+            model="gpt-4-turbo",
             temperature=0,
             messages=messages,
         )
