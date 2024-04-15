@@ -231,6 +231,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
             update.message.reply_text(error_message)
 
             print(error_message)
+            print(context.args[0])
 
 
 
