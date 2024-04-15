@@ -227,7 +227,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 groups[group_id]['messages_today'] += 1
             save_data()
         except Exception as e:
-            error_message = "f'Error message:' {e}"
+            error_message = f"'Error message:' {e}"
             update.message.reply_text(error_message)
 
             print(error_message)
