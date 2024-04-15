@@ -6,6 +6,7 @@ from telegram import Update, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandler, Filters
 import requests
 import anthropic
+import logging
 
 
 # Load your OpenAI API key and Telegram token from environment variables or direct string assignment
@@ -226,7 +227,10 @@ def handle_message(update: Update, context: CallbackContext) -> None:
                 groups[group_id]['messages_today'] += 1
             save_data()
         except Exception as e:
-            context.logger.error(f"Claude Error: {e}")
+            error_message = f"'Error message:' {e}"
+            update.message.reply_text(error_message)
+
+            print(error_message)
 
 
 
