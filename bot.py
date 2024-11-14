@@ -7,33 +7,44 @@ from telegram.ext import Updater, CommandHandler, CallbackContext, MessageHandle
 import requests
 import anthropic
 import logging
+from telegram.error import Conflict, NetworkError, TelegramError
+import time
 
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
-# Load your Claude API key and Telegram token from environment variables or direct string assignment
+# Load environment variables
 CLAUDE_KEY = os.getenv('CLAUDE_KEY')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
+if not TELEGRAM_TOKEN:
+    raise ValueError("TELEGRAM_TOKEN not set in environment variables")
+
+if not CLAUDE_KEY:
+    raise ValueError("CLAUDE_KEY not set in environment variables")
+
 # Initialize Claude client
-client = anthropic.Anthropic(
-    # defaults to os.environ.get("ANTHROPIC_API_KEY")
-    api_key=CLAUDE_KEY
-)
+client = anthropic.Anthropic(api_key=CLAUDE_KEY)
+
+# Initialize directories
+os.makedirs('sources', exist_ok=True)
+os.makedirs('responses', exist_ok=True)
 
 # Initialize a lock for thread-safe file writing
 file_lock = Lock()
 
-# Load or initialize the admin list and group whitelist
-admins = {}
-groups = {}
-usage_data = {}
-
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Hello! Ask me anything about ApeWorX!')
-
 # Load knowledge base
-knowledge_base = ''
-with open('knowledge-base.txt', 'r', encoding="utf-8") as file:
-    knowledge_base = file.read()
+try:
+    with open('knowledge-base.txt', 'r', encoding="utf-8") as file:
+        knowledge_base = file.read()
+    logger.info("Knowledge base loaded successfully")
+except Exception as e:
+    logger.error(f"Error loading knowledge base: {e}")
+    knowledge_base = ""
 
 # Default configurations
 DEFAULT_ADMINS = {
