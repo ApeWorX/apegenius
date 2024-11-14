@@ -9,7 +9,7 @@ import anthropic
 import logging
 
 
-# Load your OpenAI API key and Telegram token from environment variables or direct string assignment
+# Load your Claude API key and Telegram token from environment variables or direct string assignment
 CLAUDE_KEY = os.getenv('CLAUDE_KEY')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 
@@ -30,10 +30,12 @@ usage_data = {}
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hello! Ask me anything about ApeWorX!')
 
+# Load knowledge base
 knowledge_base = ''
 with open('knowledge-base.txt', 'r', encoding="utf-8") as file:
     knowledge_base = file.read()
 
+# Default configurations
 DEFAULT_ADMINS = {
     '67950696': True,
 }
@@ -42,6 +44,27 @@ DEFAULT_GROUPS = {
     '-1001868541493': {'messages_today': 0, 'last_reset': str(datetime.date.today())}, 
     '-4069234649': {'messages_today': 0, 'last_reset': str(datetime.date.today())},
 }
+
+def safe_split_message(text, max_length=4000):
+    """Split message while preserving markdown code blocks."""
+    messages = []
+    current_message = ""
+    code_block = False
+    
+    for line in text.split('\n'):
+        if line.startswith('```'):
+            code_block = not code_block
+            
+        if len(current_message + line + '\n') > max_length and not code_block:
+            messages.append(current_message)
+            current_message = line + '\n'
+        else:
+            current_message += line + '\n'
+            
+    if current_message:
+        messages.append(current_message)
+        
+    return messages
 
 def load_data():
     global admins, groups, usage_data
@@ -78,9 +101,10 @@ def save_data():
         with open('usage.yml', 'w') as f:
             yaml.dump(usage_data, f)
 
-# Define the command handler to add admins
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Hello! Ask me anything about ApeWorX!')
+
 def add_admin(update: Update, context: CallbackContext) -> None:
-    # Only allow the owner to add new admins
     owner_id = '67950696'
     if update.message.from_user.id == int(owner_id):
         new_admin_id = context.args[0] if context.args else ''
@@ -90,9 +114,7 @@ def add_admin(update: Update, context: CallbackContext) -> None:
     else:
         update.message.reply_text('You are not authorized to add admins.')
 
-# Define the command handler to add groups to the whitelist
 def add_group(update: Update, context: CallbackContext) -> None:
-    # Only allow admins to add new groups
     if str(update.message.from_user.id) in admins:
         new_group_id = context.args[0] if context.args else ''
         groups[new_group_id] = {'messages_today': 0, 'last_reset': str(datetime.date.today())}
@@ -101,7 +123,6 @@ def add_group(update: Update, context: CallbackContext) -> None:
     else:
         update.message.reply_text('You are not authorized to add groups.')
 
-# Define the preaudit command handler
 def preaudit(update: Update, context: CallbackContext) -> None:
     url = context.args[0] if context.args else ''
     if not url:
@@ -120,20 +141,10 @@ def preaudit(update: Update, context: CallbackContext) -> None:
 /- For large codebases it's ok to analyze only the most important functions (normally the external ones).
 /- You don't need to execute any part of the code, just read it.
 '''
-        messages = [
-            {
-                "role": "user",
-                "content": prompt
-            },
-            {
-                "role": "assistant",
-                "content": ":"
-            },
-            {
-                "role": "user",
-                "content": code_content
-            }
-        ]
+        messages = [{
+            "role": "user",
+            "content": f"{prompt}\n\n{code_content}"
+        }]
 
         response = client.messages.create(
             model="claude-3-opus-20240229",
@@ -143,17 +154,16 @@ def preaudit(update: Update, context: CallbackContext) -> None:
         )
 
         bot_response = response.content[0].text
-        # Split the message into chunks of 4096 characters
-        max_length = 4000
-        messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
-        for msg in messages:
-            update.message.reply_text(msg)
+        for msg in safe_split_message(bot_response):
+            update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
 
     except requests.RequestException as e:
         update.message.reply_text(f"Error fetching data from the URL: {e}")
-        
+    except (APIError, APIConnectionError, APITimeoutError) as e:
+        update.message.reply_text(f"Claude API error: {str(e)}")
+    except Exception as e:
+        update.message.reply_text(f"Unexpected error: {str(e)}")
 
-        # Define the message handler
 def handle_message(update: Update, context: CallbackContext) -> None:
     group_id = str(update.message.chat_id)
 
@@ -171,11 +181,7 @@ def handle_message(update: Update, context: CallbackContext) -> None:
         command_to_remove = update.message.text.split()[0]  # This will be either /p or /prompt
         user_message = user_message.replace(command_to_remove, '', 1).strip()
 
-        # Prepare the list of messages for OpenAI
-        messages = [
-            {
-                "role": "user",
-                "content": '''
+        system_prompt = '''
 /- You are a bot helping people understand Ape.
 /- I have prefixed a KNOWLEDGE BASE that help you understand what is Ape.
 /- The answer must exist within the source files, otherwise don't answer.
@@ -186,26 +192,16 @@ def handle_message(update: Update, context: CallbackContext) -> None:
 /- ALWAYS provide a % score of how much of your answer matches the KNOWLEDGE BASE.
 /- If the task is of creative nature it's ok to go wild and beyond just the sources, but you MUST state that confidence score is -1 in that case.
 '''
-            },
-            {
-                "role": "user",
-                "content": "---START OF KNOWLEDGE BASE---\n\n" + knowledge_base + "\n\n---END OF KNOWLEDGE BASE---"
-            }
-        ]
-
-        # Check if the message is a reply to a previous message
+        knowledge_base_content = "---START OF KNOWLEDGE BASE---\n\n" + knowledge_base + "\n\n---END OF KNOWLEDGE BASE---"
+        
+        content = f"{system_prompt}\n\n{knowledge_base_content}\n\n{user_message}"
         if update.message.reply_to_message:
-            # Include the replied-to message content as an assistant message
-            messages.append({
-                "role": "assistant",
-                "content": update.message.reply_to_message.text
-            })
+            content = f"{system_prompt}\n\n{knowledge_base_content}\n\nPrevious message: {update.message.reply_to_message.text}\n\nNew message: {user_message}"
 
-        # Add the user's message
-        messages.append({
+        messages = [{
             "role": "user",
-            "content": user_message
-        })
+            "content": content
+        }]
 
         try:
             response = client.messages.create(
@@ -216,27 +212,19 @@ def handle_message(update: Update, context: CallbackContext) -> None:
             )
 
             bot_response = response.content[0].text
-            # Split the message into chunks of 4096 characters
-            max_length = 4096
-            messages = [bot_response[i:i+max_length] for i in range(0, len(bot_response), max_length)]
-            for msg in messages:
+            for msg in safe_split_message(bot_response):
                 update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
 
-            # After getting the response from OpenAI, update the usage
             if not admins.get(str(update.message.from_user.id)):
                 groups[group_id]['messages_today'] += 1
             save_data()
+        except (APIError, APIConnectionError, APITimeoutError) as e:
+            error_message = f"Claude API error: {str(e)}"
+            update.message.reply_text(error_message)
         except Exception as e:
-            error_message = f"'Error message:' {e}"
+            error_message = f"Unexpected error: {str(e)}"
             update.message.reply_text(error_message)
 
-            print(error_message)
-            print(context.args[0])
-
-
-
-
-# Main function to start the bot
 def main() -> None:
     load_data()
     updater = Updater(TELEGRAM_TOKEN)
