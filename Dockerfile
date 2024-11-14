@@ -12,15 +12,21 @@ RUN apt-get update && \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application
-COPY . .
+# Copy the application files
+COPY bot.py .
+COPY concat.py .
+COPY request.py .
+COPY knowledge-base.txt .
+
+# Copy the test directory
+COPY tests/ tests/
 
 # Create necessary directories
-RUN mkdir -p sources responses
+RUN mkdir -p sources responses knowledge-base
 
 # Set environment variables
+ENV PYTHONUNBUFFERED=1
 ENV ENVIRONMENT=production
-ENV DEBUG=False
 
 # Run the bot
-CMD ["python", "telegram_bot.py"]
+CMD ["python", "bot.py"]
